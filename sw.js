@@ -1,5 +1,5 @@
 // Cache-once, serve-forever — no update checks needed
-const CACHE = 'advantagedata-v3';
+const CACHE = 'advantagedata-v4';
 
 const PRECACHE = [
   './index.html',

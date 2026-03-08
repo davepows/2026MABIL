@@ -20,8 +20,8 @@
   --topbar-h:56px;--tabbar-h:52px;
   --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
 }
-html{height:100%;overflow:hidden;max-width:100vw}
-body{height:100%;overflow:hidden;max-width:100vw;font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-text-size-adjust:100%}
+html{height:100%;overflow:hidden;max-width:100%;overscroll-behavior-x:none}
+body{height:100%;overflow:hidden;max-width:100%;overscroll-behavior-x:none;font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-text-size-adjust:100%}
 
 /* ── TOPBAR ── */
 .topbar{height:calc(var(--topbar-h) + var(--safe-top));min-height:calc(var(--topbar-h) + var(--safe-top));padding-top:var(--safe-top);display:flex;align-items:flex-end;justify-content:space-between;padding-left:16px;padding-right:16px;padding-bottom:0;background:#0d1629;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
@@ -38,7 +38,7 @@ body{height:100%;overflow:hidden;max-width:100vw;font-family:'Plus Jakarta Sans'
 .tab-btn.active{color:#EFAB28;border-bottom-color:#EFAB28}
 
 /* ── SCROLL AREA ── */
-.tab-content{display:none;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px}
+.tab-content{display:none;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px;touch-action:pan-y}
 .tab-content.active{display:flex;flex-direction:column}
 
 /* ── DRAWER TOGGLE (iPad portrait) ── */
@@ -106,7 +106,8 @@ body{height:100%;overflow:hidden;max-width:100vw;font-family:'Plus Jakarta Sans'
 .stat-card .sub{font-size:.74rem;color:var(--muted2);margin-top:2px}
 
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.card{background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:16px 18px;box-shadow:0 4px 20px rgba(0,0,0,0.35)}
+.two-col>*,.stats-grid>*{min-width:0}
+.card{background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:16px 18px;box-shadow:0 4px 20px rgba(0,0,0,0.35);min-width:0;overflow:hidden}
 .card h3{font-size:.78rem;font-weight:700;color:rgba(244,244,238,0.55);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
 .chart-wrap{position:relative;height:220px;min-width:0;width:100%}
 
