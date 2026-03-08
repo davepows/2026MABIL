@@ -226,6 +226,55 @@ body{height:100%;overflow:hidden;max-width:100%;overscroll-behavior-x:none;font-
 .t-rank{flex-shrink:0;font-size:.68rem;font-weight:700;color:rgba(244,244,238,0.75);min-width:16px;text-align:right;line-height:1}
 .team-list-item.dragging{opacity:0.35!important;background:rgba(239,171,40,0.05)!important}
 .team-list-item.drag-over{background:rgba(239,171,40,0.13)!important;border-top:2px solid #EFAB28}
+
+/* ── MATCH ANALYSIS TAB ── */
+.ma-section{margin-bottom:20px}
+.ma-section h2{font-size:.78rem;font-weight:700;color:rgba(244,244,238,0.55);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.ma-loading{text-align:center;padding:40px 20px;color:var(--muted);font-size:.95rem}
+.ma-loading .spin{display:inline-block;font-size:1.6rem;animation:spin 1s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ma-error{text-align:center;padding:30px 20px;color:#f43f5e;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.2);border-radius:12px;font-size:.9rem;line-height:1.5}
+.ma-note{font-size:.75rem;color:var(--muted);margin-top:6px}
+
+/* Match cards */
+.match-card{background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 14px;margin-bottom:8px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
+.match-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.match-card-header .mc-label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.match-card-header .mc-status{font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:8px;background:rgba(34,211,161,.12);color:var(--green)}
+.match-card-header .mc-status.upcoming{background:rgba(239,171,40,.12);color:#EFAB28}
+.match-alliances{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.alliance-block{padding:10px 12px;border-radius:10px;text-align:center}
+.alliance-block.red{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.2)}
+.alliance-block.blue{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2)}
+.alliance-block.winner{box-shadow:0 0 0 2px currentColor}
+.alliance-block.red.winner{box-shadow:0 0 0 2px #f43f5e}
+.alliance-block.blue.winner{box-shadow:0 0 0 2px #3b82f6}
+.alliance-teams{font-size:.76rem;color:var(--muted2);line-height:1.7}
+.alliance-score{font-size:1.7rem;font-weight:800;line-height:1}
+.alliance-block.red .alliance-score{color:#f43f5e}
+.alliance-block.blue .alliance-score{color:#3b82f6}
+.match-mid{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.match-mid .vs{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase}
+.win-prob-bar{width:80px;height:6px;border-radius:3px;background:#1a2a4a;overflow:hidden;margin-top:2px}
+.win-prob-fill{height:100%;background:#f43f5e;border-radius:3px;transition:width .3s}
+.win-prob-label{font-size:.64rem;color:var(--muted);white-space:nowrap}
+.pred-score{font-size:.68rem;color:var(--muted);margin-top:4px}
+
+/* EPA table */
+.epa-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.epa-table th{text-align:left;padding:9px 10px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.epa-table td{padding:10px 10px;border-bottom:1px solid rgba(42,45,62,.4);vertical-align:middle}
+.epa-table tr:last-child td{border-bottom:none}
+.epa-table tr:hover td{background:rgba(255,255,255,0.03)}
+.epa-rank{font-weight:700;color:var(--muted);font-size:.8rem;text-align:center}
+.epa-rank.top3{color:#EFAB28}
+.epa-bar-wrap{display:flex;align-items:center;gap:6px}
+.epa-bar{height:5px;border-radius:3px;background:#EFAB28;min-width:2px;flex-shrink:0}
+.epa-val{font-weight:700}
+.epa-team-num{font-weight:800;color:#EFAB28}
+.ma-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.ma-tab-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(244,244,238,0.55);border-radius:8px;padding:7px 14px;font-size:.8rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
+.ma-tab-btn.active{background:rgba(239,171,40,0.12);border-color:rgba(239,171,40,0.4);color:#EFAB28}
 </style>
 </head>
 <body>
@@ -260,6 +309,7 @@ body{height:100%;overflow:hidden;max-width:100%;overscroll-behavior-x:none;font-
 <div class="tabs-header">
   <button class="tab-btn active" onclick="switchTab('browser')">🤖 Team Browser</button>
   <button class="tab-btn" onclick="switchTab('compare')">📊 Compare Teams</button>
+  <button class="tab-btn" onclick="switchTab('match')">🔎 Match Analysis</button>
 </div>
 
 <div id="tab-browser" class="tab-content active">
@@ -308,6 +358,17 @@ body{height:100%;overflow:hidden;max-width:100%;overscroll-behavior-x:none;font-
     </div>
   </div>
   <div id="compareCharts"></div>
+</div>
+
+<!-- ── MATCH ANALYSIS TAB ── -->
+<div id="tab-match" class="tab-content">
+  <div class="ma-tabs">
+    <button class="ma-tab-btn active" id="maTabMatches" onclick="setMATab('matches')">📋 Match Schedule</button>
+    <button class="ma-tab-btn" id="maTabEPA" onclick="setMATab('epa')">⚡ EPA Rankings</button>
+  </div>
+  <div id="maContent">
+    <div class="ma-loading"><div class="spin">⟳</div><div>Loading match data…</div></div>
+  </div>
 </div>
 
 <script>
@@ -858,9 +919,218 @@ function renderCompare(){
 
 // ── TAB SWITCHING ────────────────────────────────────────────────
 function switchTab(tab){
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['browser','compare'][i]===tab));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['browser','compare','match'][i]===tab));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='match') loadMatchAnalysis();
+}
+
+// ── MATCH ANALYSIS ───────────────────────────────────────────────
+const MA_EVENT = '2026mabil';
+let _maData = null;      // {matches, teamEvents} once loaded
+let _maLoaded = false;
+let _maLoading = false;
+let _maTab = 'matches';
+
+function setMATab(t){
+  _maTab = t;
+  document.getElementById('maTabMatches').classList.toggle('active', t==='matches');
+  document.getElementById('maTabEPA').classList.toggle('active', t==='epa');
+  if(_maData) renderMAContent();
+}
+
+async function loadMatchAnalysis(){
+  if(_maLoaded){
+    renderMAContent();
+    return;
+  }
+  if(_maLoading) return;
+  _maLoading = true;
+  showMALoading();
+  try {
+    const [matchRes, teamRes] = await Promise.all([
+      fetch(`https://api.statbotics.io/v3/matches?event=${MA_EVENT}&limit=500`),
+      fetch(`https://api.statbotics.io/v3/team_events?event=${MA_EVENT}&limit=200`)
+    ]);
+    if(!matchRes.ok || !teamRes.ok) throw new Error('API error');
+    const matches = await matchRes.json();
+    const teamEvents = await teamRes.json();
+    _maData = {matches, teamEvents};
+    _maLoaded = true;
+    renderMAContent();
+  } catch(err){
+    showMAError(err);
+  }
+  _maLoading = false;
+}
+
+function showMALoading(){
+  document.getElementById('maContent').innerHTML=
+    `<div class="ma-loading"><div class="spin">⟳</div><div>Loading from Statbotics…</div></div>`;
+}
+
+function showMAError(err){
+  document.getElementById('maContent').innerHTML=
+    `<div class="ma-error">
+      <div style="font-size:1.5rem;margin-bottom:8px">⚠️</div>
+      <div><strong>Could not load match data</strong></div>
+      <div class="ma-note">Make sure you have an internet connection and try switching tabs again.<br>
+      Statbotics API: api.statbotics.io/v3 (event: ${MA_EVENT})</div>
+      <button style="margin-top:14px;background:rgba(239,171,40,.15);border:1.5px solid rgba(239,171,40,.4);color:#EFAB28;border-radius:8px;padding:9px 20px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit" onclick="_maLoaded=false;_maLoading=false;loadMatchAnalysis()">Retry</button>
+    </div>`;
+}
+
+function renderMAContent(){
+  if(_maTab==='matches') renderMAMatches();
+  else renderMAEPA();
+}
+
+function renderMAMatches(){
+  const matches = _maData.matches;
+  if(!matches||!matches.length){
+    document.getElementById('maContent').innerHTML='<div class="ma-loading">No match data available for this event yet.</div>';
+    return;
+  }
+  // Sort by comp_level priority then match number
+  const levelOrder = {qm:0,ef:1,qf:2,sf:3,f:4};
+  const sorted = [...matches].sort((a,b)=>{
+    const la=(levelOrder[a.comp_level]??0)-(levelOrder[b.comp_level]??0);
+    if(la!==0) return la;
+    const mna=(a.match_number||a.set_number||0), mnb=(b.match_number||b.set_number||0);
+    return mna-mnb;
+  });
+
+  let html='';
+  let lastGroup='';
+  sorted.forEach(m=>{
+    const level=m.comp_level||'qm';
+    const groupLabel={qm:'Qualification Matches',ef:'Elimination Round',qf:'Quarterfinals',sf:'Semifinals',f:'Finals'}[level]||level.toUpperCase();
+    if(groupLabel!==lastGroup){
+      html+=`<div class="ma-section"><h2>${groupLabel}</h2></div>`;
+      lastGroup=groupLabel;
+    }
+
+    // Teams
+    const red = (m.alliances?.red?.team_keys||m.red_alliance||[]).map(t=>t.replace('frc',''));
+    const blue = (m.alliances?.blue?.team_keys||m.blue_alliance||[]).map(t=>t.replace('frc',''));
+
+    // Scores
+    const redScore = m.alliances?.red?.score ?? m.red_score ?? null;
+    const blueScore = m.alliances?.blue?.score ?? m.blue_score ?? null;
+    const hasScore = redScore!==null && redScore>=0 && blueScore!==null;
+
+    // Predicted
+    const predRed = m.pred?.red_score ?? m.epa?.red?.total ?? null;
+    const predBlue = m.pred?.blue_score ?? m.epa?.blue?.total ?? null;
+    const winProb = m.pred?.red_win_prob ?? m.pred?.win_prob ?? null; // red win probability
+
+    const matchNum = m.match_number || m.set_number || m.key?.split('_').pop() || '?';
+    const matchLabel = level==='qm'?`Q${matchNum}`:
+      level==='qf'?`QF${m.set_number||''}-${matchNum}`:
+      level==='sf'?`SF${m.set_number||''}-${matchNum}`:
+      level==='f'?`F${matchNum}`:`${level.toUpperCase()}-${matchNum}`;
+
+    // Winner
+    const winner = m.winning_alliance || (hasScore ? (redScore>blueScore?'red':blueScore>redScore?'blue':'tie') : null);
+
+    // Status chip
+    const statusHtml = hasScore
+      ? `<span class="mc-status">Played</span>`
+      : `<span class="mc-status upcoming">Upcoming</span>`;
+
+    // Scores display
+    const redScoreHtml = hasScore ? String(redScore) : (predRed!==null?`<span style="color:var(--muted);font-size:1rem">~${Math.round(predRed)}</span>`:'—');
+    const blueScoreHtml = hasScore ? String(blueScore) : (predBlue!==null?`<span style="color:var(--muted);font-size:1rem">~${Math.round(predBlue)}</span>`:'—');
+
+    // Win prob bar (red on left)
+    let probHtml='';
+    if(winProb!==null){
+      const redPct=Math.round(winProb*100);
+      probHtml=`<div class="win-prob-bar"><div class="win-prob-fill" style="width:${redPct}%"></div></div>
+                <div class="win-prob-label">${redPct}% red</div>`;
+    }
+
+    // Pred scores note
+    let predNote='';
+    if(!hasScore && predRed!==null && predBlue!==null){
+      predNote=`<div class="pred-score" style="margin-top:3px;font-size:.62rem;color:var(--muted)">Predicted: ${Math.round(predRed)} – ${Math.round(predBlue)}</div>`;
+    }
+
+    html+=`<div class="match-card">
+      <div class="match-card-header">
+        <span class="mc-label">${matchLabel}</span>
+        ${statusHtml}
+      </div>
+      <div class="match-alliances">
+        <div class="alliance-block red${winner==='red'?' winner':''}">
+          <div class="alliance-score">${redScoreHtml}</div>
+          <div class="alliance-teams">${red.join(' · ')||'TBD'}</div>
+        </div>
+        <div class="match-mid">
+          <span class="vs">vs</span>
+          ${probHtml}
+          ${predNote}
+        </div>
+        <div class="alliance-block blue${winner==='blue'?' winner':''}">
+          <div class="alliance-score">${blueScoreHtml}</div>
+          <div class="alliance-teams">${blue.join(' · ')||'TBD'}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('maContent').innerHTML=html||'<div class="ma-loading">No matches yet.</div>';
+}
+
+function renderMAEPA(){
+  const teamEvents = _maData.teamEvents;
+  if(!teamEvents||!teamEvents.length){
+    document.getElementById('maContent').innerHTML='<div class="ma-loading">No EPA data available yet.</div>';
+    return;
+  }
+  // Sort by epa total descending
+  const getEPA = te => te.epa?.total_points?.mean ?? te.epa?.total ?? te.epa ?? 0;
+  const sorted = [...teamEvents].sort((a,b)=>getEPA(b)-getEPA(a));
+  const maxEPA = getEPA(sorted[0])||1;
+
+  let html=`<div class="card"><div class="table-scroll"><table class="epa-table">
+    <thead><tr>
+      <th style="width:36px;text-align:center">#</th>
+      <th>Team</th>
+      <th>EPA</th>
+      <th>Auto</th>
+      <th>Teleop</th>
+      <th>Endgame</th>
+      <th>W-L-T</th>
+    </tr></thead><tbody>`;
+
+  sorted.forEach((te,i)=>{
+    const team=(te.team||te.team_number||te.team_key||'').toString().replace('frc','');
+    const epaTotal=getEPA(te);
+    const epaAuto = te.epa?.auto_points?.mean ?? te.epa?.auto ?? null;
+    const epaTele = te.epa?.teleop_points?.mean ?? te.epa?.teleop ?? null;
+    const epaEnd = te.epa?.endgame_points?.mean ?? te.epa?.endgame ?? null;
+    const wins = te.record?.wins ?? te.wins ?? '—';
+    const losses = te.record?.losses ?? te.losses ?? '—';
+    const ties = te.record?.ties ?? te.ties ?? 0;
+    const barPct=Math.round((epaTotal/maxEPA)*100);
+    const rankCls=i<3?'top3':'';
+    const fmt=v=>v!=null?v.toFixed(1):'—';
+
+    html+=`<tr>
+      <td class="epa-rank ${rankCls}">${i+1}</td>
+      <td><span class="epa-team-num">${team}</span></td>
+      <td><div class="epa-bar-wrap">
+        <div class="epa-bar" style="width:${barPct*0.6}px"></div>
+        <span class="epa-val">${fmt(epaTotal)}</span>
+      </div></td>
+      <td>${fmt(epaAuto)}</td>
+      <td>${fmt(epaTele)}</td>
+      <td>${fmt(epaEnd)}</td>
+      <td style="color:var(--muted2);font-size:.8rem">${wins}-${losses}${ties>0?'-'+ties:''}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div></div>';
+  document.getElementById('maContent').innerHTML=html;
 }
 
 
