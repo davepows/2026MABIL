@@ -38,7 +38,7 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 .tab-btn.active{color:#EFAB28;border-bottom-color:#EFAB28}
 
 /* ── SCROLL AREA ── */
-.tab-content{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px}
+.tab-content{display:none;flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:16px}
 .tab-content.active{display:flex;flex-direction:column}
 
 /* ── DRAWER TOGGLE (iPad portrait) ── */
@@ -91,7 +91,7 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 .tier-struggle{background:rgba(244,63,94,.15);color:var(--red)}
 
 /* ── TEAM DETAIL ── */
-.team-detail{display:flex;flex-direction:column;gap:16px}
+.team-detail{display:flex;flex-direction:column;gap:16px;min-width:0}
 .detail-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .detail-header h2{font-size:1.9rem;font-weight:800;color:#F4F4EE}
 .trend-badge{display:flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:.84rem;font-weight:600}
@@ -108,11 +108,11 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .card{background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:16px 18px;box-shadow:0 4px 20px rgba(0,0,0,0.35)}
 .card h3{font-size:.78rem;font-weight:700;color:rgba(244,244,238,0.55);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
-.chart-wrap{position:relative;height:220px}
+.chart-wrap{position:relative;height:220px;min-width:0;width:100%}
 
 /* Match table */
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
-.match-table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:580px}
+.match-table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:380px}
 .match-table th{text-align:left;padding:10px 12px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
 .match-table td{padding:11px 12px;border-bottom:1px solid rgba(42,45,62,.5);vertical-align:top}
 .match-table tr:last-child td{border-bottom:none}
