@@ -11,8 +11,6 @@ A lightweight, self-contained HTML scouting analysis tool for the 2026 Abilene d
 | File | Description |
 |------|-------------|
 | `index.html` | Main dashboard — team browser + compare tool (GitHub Pages entry point) |
-| `elite_teams_charts.html` | Elite teams chart page, linked from the main dashboard |
-| `scouting_dashboard.html` | Local copy of the main dashboard |
 
 ---
 
