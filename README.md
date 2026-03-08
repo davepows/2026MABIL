@@ -2,18 +2,21 @@
 
 A lightweight, self-contained HTML scouting analysis tool for the 2026 Abilene district event. No server required — just open the file in any browser.
 
+🔗 **Live site:** https://davepowers.github.io/2026MABIL/
+
 ---
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `scouting_dashboard.html` | Main dashboard — team browser + compare tool |
-| `elite_teams_charts.html` | Standalone chart page for the top 5 elite teams |
+| `index.html` | Main dashboard — team browser + compare tool (GitHub Pages entry point) |
+| `elite_teams_charts.html` | Elite teams chart page, linked from the main dashboard |
+| `scouting_dashboard.html` | Local copy of the main dashboard |
 
 ---
 
-## scouting_dashboard.html
+## index.html — Main Dashboard
 
 The main dashboard has two tabs.
 
