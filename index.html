@@ -60,7 +60,7 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 .drawer-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 /* ── DESKTOP SIDEBAR ── */
-.browser-layout{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start;flex:1}
+.browser-layout{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start;flex:1}
 .team-list-panel{background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden;position:sticky;top:0;max-height:calc(100vh - var(--topbar-h) - var(--tabbar-h) - 32px);box-shadow:0 4px 20px rgba(0,0,0,0.35)}
 .team-list-search{padding:10px 12px;border-bottom:1px solid var(--border)}
 .team-list-search input{width:100%;background:rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 12px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .15s;font-family:'Plus Jakarta Sans',sans-serif}
@@ -155,7 +155,7 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 
 /* ── TABLET / iPAD (≤1080px) — sidebar stays visible ── */
 @media(max-width:1080px){
-  .browser-layout{grid-template-columns:210px 1fr}
+  .browser-layout{grid-template-columns:260px 1fr}
   .drawer-toggle{display:none}
   .two-col{grid-template-columns:1fr 1fr}
   .compare-grid{grid-template-columns:1fr 1fr}
@@ -477,12 +477,8 @@ function buildTeamList(filter='',containerId='teamList'){
     }
     const hideIcon  = isHidden ? '👁' : '✕';
     const hideTitle = isHidden ? 'Unhide team' : 'Hide team';
-    const dnpLabel  = isDNP ? '↩' : 'DNP';
-    const dnpTitle  = isDNP ? 'Remove from DNP' : 'Mark as Do Not Pick';
-    // DNP button only in main team list (not drawer)
-    const dnpHtml = containerId==='teamList'
-      ? `<button class="dnp-btn" title="${dnpTitle}" onclick="event.stopPropagation();toggleDNP('${t}')">${dnpLabel}</button>`
-      : '';
+    // DNP managed via pick list modal only — no per-row button
+    const dnpHtml = '';
     const handleVis = canDrag ? '' : ' style="opacity:0;pointer-events:none"';
     div.innerHTML=`<span class="drag-handle"${handleVis}>⠿</span><span class="t-rank">${canDrag?rankNum:''}</span><span class="t-name">Team ${t}</span><span class="t-avg">${d.avgTotal} avg</span><span class="tier ${tier.cls}">${tier.label}</span>${dnpHtml}<button class="hide-btn" title="${hideTitle}" onclick="event.stopPropagation();toggleHideTeam('${t}')">${hideIcon}</button>`;
     if(canDrag){
