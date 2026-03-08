@@ -168,6 +168,28 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
   .compare-grid .full{grid-column:1}
   .tab-btn{font-size:.88rem}
 }
+
+/* ── PICK LIST ── */
+.list-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.list-header-search{flex:1}
+.list-header-search input{width:100%;background:rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 12px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .15s;font-family:'Plus Jakarta Sans',sans-serif}
+.list-header-search input:focus{border-color:#EFAB28;box-shadow:0 0 0 3px rgba(239,171,40,0.15)}
+.picklist-btn{flex-shrink:0;background:none;border:1.5px solid rgba(255,255,255,0.15);color:rgba(244,244,238,0.5);border-radius:8px;padding:7px 10px;font-size:.78rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-left:8px;transition:all .15s;white-space:nowrap}
+.picklist-btn.active{background:rgba(239,171,40,0.12);border-color:rgba(239,171,40,0.5);color:#EFAB28}
+.picklist-btn:active{opacity:.7}
+.pl-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;padding:20px}
+.pl-modal-overlay.visible{display:flex}
+.pl-modal{background:#1e3a70;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:24px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,0.6)}
+.pl-modal h2{font-size:1.05rem;font-weight:800;color:#F4F4EE;margin-bottom:6px}
+.pl-modal p{font-size:.8rem;color:rgba(244,244,238,0.55);margin-bottom:14px;line-height:1.5}
+.pl-modal textarea{width:100%;background:rgba(0,0,0,0.35);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 14px;color:#F4F4EE;font-size:.95rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;resize:none;height:220px;line-height:1.7;transition:border-color .15s}
+.pl-modal textarea:focus{border-color:#EFAB28;box-shadow:0 0 0 3px rgba(239,171,40,0.15)}
+.pl-modal-btns{display:flex;gap:10px;margin-top:14px}
+.pl-save-btn{flex:1;background:#EFAB28;color:#151D3B;border:none;border-radius:10px;padding:13px;font-size:.95rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.pl-save-btn:active{background:#d4941f}
+.pl-clear-btn{background:rgba(244,63,94,0.12);color:#f43f5e;border:1.5px solid rgba(244,63,94,0.3);border-radius:10px;padding:13px 16px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.pl-clear-btn:active{background:rgba(244,63,94,0.22)}
+.pl-cancel-btn{background:rgba(255,255,255,0.07);color:rgba(244,244,238,0.6);border:none;border-radius:10px;padding:13px 16px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
 </style>
 </head>
 <body>
@@ -217,8 +239,11 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
   </button>
   <div class="browser-layout">
     <div class="team-list-panel">
-      <div class="team-list-search">
-        <input type="text" id="teamSearch" placeholder="Search team #..." oninput="filterTeams(this.value)"/>
+      <div class="list-header">
+        <div class="list-header-search">
+          <input type="text" id="teamSearch" placeholder="Search teams..." oninput="filterTeams(this.value)"/>
+        </div>
+        <button class="picklist-btn" id="picklistBtn" onclick="openPicklistModal()" title="Set custom pick list order">📋</button>
       </div>
       <div class="team-list" id="teamList"></div>
       <div class="hidden-toggle" id="hiddenToggle" style="display:none">
@@ -318,7 +343,7 @@ function buildTeamList(filter='',containerId='teamList'){
   if(!el) return;
   el.innerHTML='';
   let hiddenCount=0;
-  ALL_TEAMS.forEach(t=>{
+  getTeamOrder().forEach(t=>{
     if(filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
     const isHidden = _hiddenTeams.has(t);
     if(isHidden) hiddenCount++;
@@ -709,6 +734,44 @@ function switchTab(tab){
 }
 
 
+
+// ── PICK LIST ────────────────────────────────────────────────────
+let _pickList = JSON.parse(localStorage.getItem('pickList6328') || '[]');
+
+function getTeamOrder(){
+  if(!_pickList.length) return ALL_TEAMS;
+  const inList = _pickList.filter(t => TEAM_DATA[t]);
+  const notInList = ALL_TEAMS.filter(t => !_pickList.includes(t));
+  return [...inList, ...notInList];
+}
+
+function openPicklistModal(){
+  document.getElementById('plTextarea').value = _pickList.join('\n');
+  document.getElementById('plModalOverlay').classList.add('visible');
+  setTimeout(()=>document.getElementById('plTextarea').focus(), 100);
+}
+
+function closePLModal(){
+  document.getElementById('plModalOverlay').classList.remove('visible');
+}
+
+function savePLOrder(){
+  const raw = document.getElementById('plTextarea').value;
+  // Accept numbers separated by newlines, commas, or spaces
+  _pickList = raw.split(/[\n,\s]+/).map(s=>s.trim()).filter(s=>s && TEAM_DATA[s]);
+  localStorage.setItem('pickList6328', JSON.stringify(_pickList));
+  const btn = document.getElementById('picklistBtn');
+  if(btn) btn.classList.toggle('active', _pickList.length > 0);
+  closePLModal();
+  buildTeamList(document.getElementById('teamSearch')?.value||'','teamList');
+  buildTeamList(document.getElementById('drawerSearch')?.value||'','drawerList');
+  showToast(_pickList.length > 0 ? `✓ Pick list set · ${_pickList.length} teams` : '✓ Sorted by avg pts');
+}
+
+function clearPLOrder(){
+  document.getElementById('plTextarea').value = '';
+}
+
 // ── TOAST ────────────────────────────────────────────────────────
 function showToast(msg, duration=3000){
   const t=document.getElementById('toast');
@@ -858,6 +921,9 @@ function init() {
     document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:80vh;flex-direction:column;gap:16px;color:#8b8fa8;font-family:sans-serif"><div style="font-size:2rem">⚠️</div><div>Chart.js failed to load. Check your internet connection and refresh.</div></div>';
     return;
   }
+  // Restore pick list btn active state
+  const plBtn = document.getElementById('picklistBtn');
+  if(plBtn && _pickList.length > 0) plBtn.classList.add('active');
   buildTeamList('','teamList');
   buildTeamList('','drawerList');
   buildCompareSelects();
@@ -873,6 +939,20 @@ if (document.readyState === 'loading') {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<!-- Pick List Modal -->
+<div class="pl-modal-overlay" id="plModalOverlay" onclick="if(event.target===this)closePLModal()">
+  <div class="pl-modal">
+    <h2>📋 Pick List Order</h2>
+    <p>Enter team numbers one per line (or comma/space separated). The list will sort to match. Teams not listed stay at the bottom.</p>
+    <textarea id="plTextarea" placeholder="6328&#10;3467&#10;4909&#10;1768&#10;..."></textarea>
+    <div class="pl-modal-btns">
+      <button class="pl-save-btn" onclick="savePLOrder()">Save Order</button>
+      <button class="pl-clear-btn" onclick="clearPLOrder()">Clear</button>
+      <button class="pl-cancel-btn" onclick="closePLModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
