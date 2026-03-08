@@ -685,7 +685,7 @@ function buildCompareSelects(){
   const defaults=['6328','3467','4909'];
   selects.forEach((id,i)=>{
     const sel=document.getElementById(id);
-    ALL_TEAMS.forEach(t=>{
+    [...ALL_TEAMS].sort((a,b)=>Number(a)-Number(b)).forEach(t=>{
       const opt=document.createElement('option');
       opt.value=t; opt.textContent=`Team ${t} (${TEAM_DATA[t].avgTotal} avg)`;
       if(t===defaults[i]) opt.selected=true;
