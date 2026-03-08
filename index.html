@@ -185,11 +185,21 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 .pl-modal textarea{width:100%;background:rgba(0,0,0,0.35);border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 14px;color:#F4F4EE;font-size:.95rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;resize:none;height:220px;line-height:1.7;transition:border-color .15s}
 .pl-modal textarea:focus{border-color:#EFAB28;box-shadow:0 0 0 3px rgba(239,171,40,0.15)}
 .pl-modal-btns{display:flex;gap:10px;margin-top:14px}
+.pl-section-divider{display:flex;align-items:center;gap:10px;margin:18px 0 8px}
+.pl-section-divider span{font-size:.82rem;font-weight:700;color:#EFAB28;white-space:nowrap;letter-spacing:.04em}
+.pl-section-divider::before,.pl-section-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.12)}
+.pl-section-divider::before{display:none}
 .pl-save-btn{flex:1;background:#EFAB28;color:#151D3B;border:none;border-radius:10px;padding:13px;font-size:.95rem;font-weight:800;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
 .pl-save-btn:active{background:#d4941f}
 .pl-clear-btn{background:rgba(244,63,94,0.12);color:#f43f5e;border:1.5px solid rgba(244,63,94,0.3);border-radius:10px;padding:13px 16px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
 .pl-clear-btn:active{background:rgba(244,63,94,0.22)}
 .pl-cancel-btn{background:rgba(255,255,255,0.07);color:rgba(244,244,238,0.6);border:none;border-radius:10px;padding:13px 16px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+
+.team-list-item.dnp-team{opacity:0.35;border-left-color:rgba(244,63,94,0.4)}
+.team-list-item.dnp-team .t-name::after{content:' · DNP';font-size:.68rem;color:rgba(244,63,94,0.8);font-weight:700}
+.dnp-btn{flex-shrink:0;background:none;border:none;color:rgba(244,244,238,0.2);font-size:.72rem;font-weight:800;cursor:pointer;padding:4px 6px;border-radius:6px;-webkit-tap-highlight-color:transparent;transition:color .15s,background .15s;line-height:1;letter-spacing:.02em}
+.dnp-btn:active,.team-list-item:hover .dnp-btn{color:rgba(244,63,94,0.7);background:rgba(244,63,94,0.1)}
+.team-list-item.dnp-team .dnp-btn{color:rgba(244,63,94,0.8);background:rgba(244,63,94,0.12)}
 </style>
 </head>
 <body>
@@ -351,15 +361,19 @@ function buildTeamList(filter='',containerId='teamList'){
     const d=TEAM_DATA[t];
     const tier=getTier(d.avgTotal);
     const div=document.createElement('div');
+    const isDNP = _dnpTeams.has(t);
     let cls='team-list-item';
     if(window._selectedTeam===t) cls+=' selected';
     if(isHidden) cls+=' hidden-team';
+    if(isDNP) cls+=' dnp-team';
     div.className=cls;
     div.dataset.team=t;
     div.onclick=()=>{ selectTeam(t); closeDrawer(); };
     const hideIcon = isHidden ? '👁' : '✕';
     const hideTitle = isHidden ? 'Unhide team' : 'Hide team';
-    div.innerHTML=`<span class="t-name">Team ${t}</span><span class="t-avg">${d.avgTotal} avg</span><span class="tier ${tier.cls}">${tier.label}</span><button class="hide-btn" title="${hideTitle}" onclick="event.stopPropagation();toggleHideTeam('${t}')">${hideIcon}</button>`;
+    const dnpLabel = isDNP ? '↩' : 'DNP';
+    const dnpTitle = isDNP ? 'Remove from DNP' : 'Mark as Do Not Pick';
+    div.innerHTML=`<span class="t-name">Team ${t}</span><span class="t-avg">${d.avgTotal} avg</span><span class="tier ${tier.cls}">${tier.label}</span><button class="dnp-btn" title="${dnpTitle}" onclick="event.stopPropagation();toggleDNP('${t}')">${dnpLabel}</button><button class="hide-btn" title="${hideTitle}" onclick="event.stopPropagation();toggleHideTeam('${t}')">${hideIcon}</button>`;
     el.appendChild(div);
   });
   // Update toggle bars
@@ -737,16 +751,26 @@ function switchTab(tab){
 
 // ── PICK LIST ────────────────────────────────────────────────────
 let _pickList = JSON.parse(localStorage.getItem('pickList6328') || '[]');
+let _dnpTeams  = new Set(JSON.parse(localStorage.getItem('dnpTeams6328')  || '[]'));
 
 function getTeamOrder(){
-  if(!_pickList.length) return ALL_TEAMS;
-  const inList = _pickList.filter(t => TEAM_DATA[t]);
-  const notInList = ALL_TEAMS.filter(t => !_pickList.includes(t));
-  return [...inList, ...notInList];
+  const base = _pickList.length
+    ? [..._pickList.filter(t=>TEAM_DATA[t]), ...ALL_TEAMS.filter(t=>!_pickList.includes(t))]
+    : [...ALL_TEAMS];
+  // DNP teams always go to the bottom, preserving relative order within each group
+  const active = base.filter(t => !_dnpTeams.has(t));
+  const dnp    = base.filter(t =>  _dnpTeams.has(t));
+  return [...active, ...dnp];
 }
 
 function openPicklistModal(){
-  document.getElementById('plTextarea').value = _pickList.join('\n');
+  // Pre-fill pick list (exclude DNP teams from the pick order area)
+  const current = _pickList.length
+    ? _pickList.filter(t => !_dnpTeams.has(t))
+    : getTeamOrder().filter(t => !_dnpTeams.has(t));
+  document.getElementById('plTextarea').value = current.join('\n');
+  // Pre-fill DNP list
+  document.getElementById('dnpTextarea').value = [..._dnpTeams].join('\n');
   document.getElementById('plModalOverlay').classList.add('visible');
   setTimeout(()=>document.getElementById('plTextarea').focus(), 100);
 }
@@ -756,20 +780,37 @@ function closePLModal(){
 }
 
 function savePLOrder(){
-  const raw = document.getElementById('plTextarea').value;
-  // Accept numbers separated by newlines, commas, or spaces
-  _pickList = raw.split(/[\n,\s]+/).map(s=>s.trim()).filter(s=>s && TEAM_DATA[s]);
+  // Save pick list
+  const rawPL = document.getElementById('plTextarea').value;
+  _pickList = rawPL.split(/[\n,\s]+/).map(s=>s.trim()).filter(s=>s && TEAM_DATA[s]);
   localStorage.setItem('pickList6328', JSON.stringify(_pickList));
   const btn = document.getElementById('picklistBtn');
   if(btn) btn.classList.toggle('active', _pickList.length > 0);
+  // Save DNP list from modal textarea
+  const rawDNP = document.getElementById('dnpTextarea').value;
+  const newDNP = rawDNP.split(/[\n,\s]+/).map(s=>s.trim()).filter(s=>s && TEAM_DATA[s]);
+  _dnpTeams = new Set(newDNP);
+  localStorage.setItem('dnpTeams6328', JSON.stringify([..._dnpTeams]));
   closePLModal();
   buildTeamList(document.getElementById('teamSearch')?.value||'','teamList');
   buildTeamList(document.getElementById('drawerSearch')?.value||'','drawerList');
-  showToast(_pickList.length > 0 ? `✓ Pick list set · ${_pickList.length} teams` : '✓ Sorted by avg pts');
+  const msgs = [];
+  if(_pickList.length) msgs.push(`${_pickList.length} pick order`);
+  if(_dnpTeams.size)   msgs.push(`${_dnpTeams.size} DNP`);
+  showToast(msgs.length ? `✓ Saved · ${msgs.join(' · ')}` : '✓ Lists cleared');
 }
 
 function clearPLOrder(){
   document.getElementById('plTextarea').value = '';
+  document.getElementById('dnpTextarea').value = '';
+}
+
+function toggleDNP(team){
+  if(_dnpTeams.has(team)) _dnpTeams.delete(team);
+  else _dnpTeams.add(team);
+  localStorage.setItem('dnpTeams6328', JSON.stringify([..._dnpTeams]));
+  buildTeamList(document.getElementById('teamSearch')?.value||'','teamList');
+  buildTeamList(document.getElementById('drawerSearch')?.value||'','drawerList');
 }
 
 // ── TOAST ────────────────────────────────────────────────────────
@@ -945,10 +986,15 @@ if (document.readyState === 'loading') {
   <div class="pl-modal">
     <h2>📋 Pick List Order</h2>
     <p>Enter team numbers one per line (or comma/space separated). The list will sort to match. Teams not listed stay at the bottom.</p>
-    <textarea id="plTextarea" placeholder="6328&#10;3467&#10;4909&#10;1768&#10;..."></textarea>
+    <textarea id="plTextarea" placeholder="" style="height:160px"></textarea>
+    <div class="pl-section-divider">
+      <span>🚫 Do Not Pick</span>
+    </div>
+    <p style="font-size:0.82rem;margin:0 0 6px;opacity:0.7;">Teams listed here will be dimmed and moved to the bottom of the list.</p>
+    <textarea id="dnpTextarea" placeholder="Paste DNP team numbers here..." style="height:100px"></textarea>
     <div class="pl-modal-btns">
-      <button class="pl-save-btn" onclick="savePLOrder()">Save Order</button>
-      <button class="pl-clear-btn" onclick="clearPLOrder()">Clear</button>
+      <button class="pl-save-btn" onclick="savePLOrder()">Save</button>
+      <button class="pl-clear-btn" onclick="clearPLOrder()">Clear All</button>
       <button class="pl-cancel-btn" onclick="closePLModal()">Cancel</button>
     </div>
   </div>
