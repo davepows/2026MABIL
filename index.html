@@ -236,10 +236,6 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
     <input type="text" id="drawerSearch" placeholder="Search team #..." oninput="filterTeams(this.value)"/>
   </div>
   <div class="drawer-list" id="drawerList"></div>
-  <div class="hidden-toggle" id="drawerHiddenToggle" style="display:none">
-    <span id="drawerHiddenCount" style="font-size:.72rem;color:rgba(244,244,238,0.4)"></span>
-    <button onclick="toggleShowHidden()"><span id="drawerHiddenToggleLabel">Show hidden</span></button>
-  </div>
 </div>
 
 <div class="tabs-header">
@@ -263,10 +259,6 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
         <button class="picklist-btn" id="picklistBtn" onclick="openPicklistModal()" title="Set custom pick list order">📋</button>
       </div>
       <div class="team-list" id="teamList"></div>
-      <div class="hidden-toggle" id="hiddenToggle" style="display:none">
-        <span id="hiddenCount" style="font-size:.72rem;color:rgba(244,244,238,0.4)"></span>
-        <button onclick="toggleShowHidden()"><span id="hiddenToggleLabel">Show hidden</span></button>
-      </div>
     </div>
     <div id="teamDetail">
       <div class="empty-state">
@@ -447,14 +439,12 @@ function buildTeamList(filter='',containerId='teamList'){
   const el = document.getElementById(containerId);
   if(!el) return;
   el.innerHTML='';
-  let hiddenCount=0, rankNum=0;
+  let rankNum=0;
   getTeamOrder().forEach(t=>{
     const isHidden = _hiddenTeams.has(t);
     const isDNP    = _dnpTeams.has(t);
     const canDrag  = !isDNP && !isHidden;
     if(canDrag) rankNum++;                        // rank counts before filter
-    if(isHidden) hiddenCount++;
-    if(isHidden && !_showHidden) return;
     if(filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
     const d=TEAM_DATA[t];
     const tier=getTier(d.avgTotal);
@@ -486,19 +476,6 @@ function buildTeamList(filter='',containerId='teamList'){
     }
     el.appendChild(div);
   });
-  // Update toggle bars
-  const isDrawer = containerId==='drawerList';
-  const toggleId = isDrawer ? 'drawerHiddenToggle' : 'hiddenToggle';
-  const countId  = isDrawer ? 'drawerHiddenCount'  : 'hiddenCount';
-  const labelId  = isDrawer ? 'drawerHiddenToggleLabel' : 'hiddenToggleLabel';
-  const toggleEl = document.getElementById(toggleId);
-  const countEl  = document.getElementById(countId);
-  const labelEl  = document.getElementById(labelId);
-  if(toggleEl){
-    toggleEl.style.display = hiddenCount>0 ? 'flex' : 'none';
-    if(countEl) countEl.textContent = `${hiddenCount} hidden`;
-    if(labelEl) labelEl.textContent = _showHidden ? 'Hide hidden' : 'Show hidden';
-  }
 }
 
 function filterTeams(val){
@@ -867,10 +844,11 @@ function getTeamOrder(){
   const base = _pickList.length
     ? [..._pickList.filter(t=>TEAM_DATA[t]), ...ALL_TEAMS.filter(t=>!_pickList.includes(t))]
     : [...ALL_TEAMS];
-  // DNP teams always go to the bottom, preserving relative order within each group
-  const active = base.filter(t => !_dnpTeams.has(t));
-  const dnp    = base.filter(t =>  _dnpTeams.has(t));
-  return [...active, ...dnp];
+  // Active → DNP → Hidden (all always visible, greyed out at bottom)
+  const active = base.filter(t => !_dnpTeams.has(t) && !_hiddenTeams.has(t));
+  const dnp    = base.filter(t =>  _dnpTeams.has(t) && !_hiddenTeams.has(t));
+  const hidden = base.filter(t =>  _hiddenTeams.has(t));
+  return [...active, ...dnp, ...hidden];
 }
 
 function openPicklistModal(){
