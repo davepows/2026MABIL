@@ -60,7 +60,7 @@ body{height:100%;overflow:hidden;max-width:100%;overscroll-behavior-x:none;font-
 .drawer-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 /* ── DESKTOP SIDEBAR ── */
-.browser-layout{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start;flex:1;min-width:0;width:100%}
+.browser-layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;align-items:start;flex:1;min-width:0;width:100%}
 .team-list-panel{background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden;position:sticky;top:0;max-height:calc(100vh - var(--topbar-h) - var(--tabbar-h) - 32px);box-shadow:0 4px 20px rgba(0,0,0,0.35)}
 .team-list-search{padding:10px 12px;border-bottom:1px solid var(--border)}
 .team-list-search input{width:100%;background:rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 12px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .15s;font-family:'Plus Jakarta Sans',sans-serif}
@@ -156,10 +156,11 @@ body{height:100%;overflow:hidden;max-width:100%;overscroll-behavior-x:none;font-
 
 /* ── TABLET / iPAD (≤1080px) — sidebar stays visible ── */
 @media(max-width:1080px){
-  .browser-layout{grid-template-columns:260px 1fr}
+  .browser-layout{grid-template-columns:210px minmax(0,1fr)}
   .drawer-toggle{display:none}
-  .two-col{grid-template-columns:1fr 1fr}
-  .compare-grid{grid-template-columns:1fr 1fr}
+  .tab-content{padding:10px}
+  .two-col{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .compare-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 }
 
 /* ── PHONE (≤600px) — switch to drawer ── */
