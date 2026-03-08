@@ -1,0 +1,18 @@
+{
+  "name": "AdvantageData — 2026 MABIL",
+  "short_name": "AdvantageData",
+  "description": "FRC 6328 match scouting dashboard for 2026 MABIL",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d1629",
+  "theme_color": "#0d1629",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "6328.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

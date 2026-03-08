@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0d1629"/>
 <title>AdvantageData — 2026 MABIL</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="manifest.json"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -26,6 +27,10 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 .topbar{height:calc(var(--topbar-h) + var(--safe-top));min-height:calc(var(--topbar-h) + var(--safe-top));padding-top:var(--safe-top);display:flex;align-items:flex-end;justify-content:space-between;padding-left:16px;padding-right:16px;padding-bottom:0;background:#0d1629;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
 .topbar-brand{display:flex;align-items:center;gap:11px;padding-bottom:10px}.topbar-brand svg{flex-shrink:0}.topbar-titles{display:flex;flex-direction:column;gap:1px}.topbar-title{font-size:.88rem;color:#F4F4EE;font-weight:800;letter-spacing:.1em;line-height:1.1}.topbar-sub{font-size:.6rem;color:rgba(239,171,40,0.85);font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 .topbar-link{font-size:.82rem;color:#EFAB28;text-decoration:none;font-weight:700;padding:6px 14px;border:1.5px solid rgba(239,171,40,.4);border-radius:8px;white-space:nowrap;-webkit-tap-highlight-color:transparent;margin-bottom:10px}
+.load-btn{background:rgba(239,171,40,0.12);border:1.5px solid rgba(239,171,40,0.35);color:#EFAB28;border-radius:10px;padding:7px 14px;font-size:.82rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:'Plus Jakarta Sans',sans-serif;margin-bottom:10px;display:flex;align-items:center;gap:6px;transition:background .15s}
+.load-btn:active{background:rgba(239,171,40,0.22)}
+.toast{position:fixed;bottom:calc(20px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:#0d1629;border:1px solid rgba(239,171,40,0.4);color:#F4F4EE;padding:12px 20px;border-radius:12px;font-size:.88rem;font-weight:600;z-index:999;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ── TABS ── */
 .tabs-header{display:flex;height:var(--tabbar-h);min-height:var(--tabbar-h);border-bottom:2px solid rgba(255,255,255,0.08);background:#0d1629;flex-shrink:0}
@@ -174,7 +179,12 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
       <div class="topbar-sub">MABIL 2026 · MECHANICAL ADVANTAGE</div>
     </div>
   </div>
+  <button class="load-btn" onclick="document.getElementById('csvFileInput').click()" title="Load new CSV data file">
+    📂 Load CSV
+  </button>
+  <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="loadCSVFile(this)"/>
 </div>
+<div class="toast" id="toast"></div>
 
 <!-- Drawer overlay -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
@@ -506,22 +516,14 @@ function updateCompareSelects(){
   ids.forEach((id,i)=>{
     const sel=document.getElementById(id);
     const taken=vals.filter((_,j)=>j!==i);
-    const curVal=vals[i];
-    const opts=Array.from(sel.options);
-    const avail=opts.filter(o=>!taken.includes(o.value));
-    const takenOpts=opts.filter(o=>taken.includes(o.value));
-    while(sel.options.length) sel.remove(0);
-    avail.forEach(o=>{
-      o.textContent=o.textContent.replace(/^⬤ /,'');
-      o.style.cssText='';
-      sel.add(o);
+    // Just dim options picked by the other selects — don't move anything
+    Array.from(sel.options).forEach(o=>{
+      if(taken.includes(o.value)){
+        o.style.color='rgba(244,244,238,0.3)';
+      } else {
+        o.style.color='';
+      }
     });
-    takenOpts.forEach(o=>{
-      if(!o.textContent.startsWith('⬤ ')) o.textContent='⬤ '+o.textContent;
-      o.style.cssText='color:rgba(244,244,238,0.3)';
-      sel.add(o);
-    });
-    sel.value=curVal;
   });
 }
 
@@ -706,6 +708,150 @@ function switchTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
 }
 
+
+// ── TOAST ────────────────────────────────────────────────────────
+function showToast(msg, duration=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
+
+// ── CSV LOADER ───────────────────────────────────────────────────
+function loadCSVFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  input.value=''; // reset so same file can be re-loaded
+  showToast('⏳ Processing '+file.name+'…', 60000);
+
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results){
+      try {
+        const newData = processCSVRows(results.data);
+        if(Object.keys(newData).length === 0){
+          showToast('⚠️ No team data found in file');
+          return;
+        }
+        // Replace global data
+        Object.keys(TEAM_DATA).forEach(k => delete TEAM_DATA[k]);
+        Object.assign(TEAM_DATA, newData);
+        ALL_TEAMS.length = 0;
+        const sorted = Object.keys(newData).sort((a,b)=>newData[b].avgTotal - newData[a].avgTotal);
+        sorted.forEach(t => ALL_TEAMS.push(t));
+
+        // Rebuild UI
+        window._selectedTeam = null;
+        buildTeamList('','teamList');
+        buildTeamList('','drawerList');
+        // Rebuild compare selects
+        ['cmp1','cmp2','cmp3'].forEach(id=>{
+          const sel=document.getElementById(id);
+          while(sel.options.length) sel.remove(0);
+        });
+        buildCompareSelects();
+        renderCompare();
+        selectTeam(ALL_TEAMS[0]);
+
+        const teams = Object.keys(newData).length;
+        const matches = Object.values(newData).reduce((s,d)=>s+d.matchCount,0);
+        showToast(`✓ Loaded ${teams} teams · ${matches} match records`);
+      } catch(err) {
+        showToast('⚠️ Error processing CSV: '+err.message);
+        console.error(err);
+      }
+    },
+    error: function(err){
+      showToast('⚠️ Failed to read file: '+err.message);
+    }
+  });
+}
+
+function processCSVRows(rows){
+  const byTeam = {};
+  rows.forEach(r => {
+    const team = (r.Team||'').trim();
+    if(!team) return;
+    if(!byTeam[team]) byTeam[team] = [];
+    byTeam[team].push(r);
+  });
+
+  const sf = (v, def=0) => { const f=parseFloat(v); return isNaN(f)?def:f; };
+  const si = (v, def=0) => { const i=parseInt(v); return isNaN(i)?def:i; };
+
+  const result = {};
+  Object.entries(byTeam).forEach(([team, matches]) => {
+    matches.sort((a,b)=>si(a.Match)-si(b.Match));
+
+    const matchList = matches.map(r => {
+      const hubS = sf(r.TotalHubFuelSuccess);
+      const hubF = sf(r.TotalHubFuelFail);
+      const acc  = (hubS+hubF)>0 ? Math.round(hubS/(hubS+hubF)*1000)/10 : null;
+      return {
+        match:         si(r.Match),
+        totalPts:      sf(r.TotalPoints),
+        autoPts:       sf(r.AutoPoints),
+        telePts:       sf(r.TelePoints),
+        hubSuccess:    hubS,
+        hubFail:       hubF,
+        accuracy:      acc,
+        climbPts:      sf(r.TotalClimbPoints),
+        botState:      si(r.BotState,1),
+        botStateText:  (r.BotStateText||'Unknown').trim(),
+        disabled:      r.Disabled==='1'||r.Disabled==='true',
+        driverRating:  sf(r.DriverRating),
+        fuelRating:    sf(r.FuelIntakeRating),
+        defenseRating: sf(r.DefenseRating),
+        comment:       (r.Comment||'').trim(),
+        startPos:      (r.StartPosition||'').trim(),
+        scoutName:     (r.ScoutName||'').trim(),
+      };
+    });
+
+    if(!matchList.length) return;
+
+    const ptsList  = matchList.map(m=>m.totalPts);
+    const autoList = matchList.map(m=>m.autoPts);
+    const teleList = matchList.map(m=>m.telePts);
+    const accList  = matchList.map(m=>m.accuracy).filter(a=>a!==null);
+    const drList   = matchList.map(m=>m.driverRating).filter(v=>v>0);
+    const fuList   = matchList.map(m=>m.fuelRating).filter(v=>v>0);
+
+    const n   = matchList.length;
+    const avg = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*10)/10 : 0;
+    const avgTotal = avg(ptsList);
+    const half = Math.floor(n/2);
+    const fhAvg = half>0 ? avg(ptsList.slice(0,half)) : avgTotal;
+    const shAvg = avg(ptsList.slice(half));
+    const trend = shAvg > fhAvg+5 ? 'up' : shAvg < fhAvg-5 ? 'down' : 'stable';
+    const variance = ptsList.reduce((s,p)=>s+(p-avgTotal)**2,0)/n;
+    const stdDev = Math.round(Math.sqrt(variance)*10)/10;
+
+    result[team] = {
+      team,
+      avgTotal,
+      avgAuto:      avg(autoList),
+      avgTele:      avg(teleList),
+      avgAccuracy:  avg(accList),
+      avgDriver:    avg(drList),
+      avgFuel:      avg(fuList),
+      malfunctions:    matchList.filter(m=>m.botState===3||m.botState===4).length,
+      commsIssues:     matchList.filter(m=>m.botState===2).length,
+      disabledEvents:  matchList.filter(m=>m.disabled).length,
+      matchCount:   n,
+      trend,
+      firstHalfAvg:  fhAvg,
+      secondHalfAvg: shAvg,
+      stdDev,
+      minPts: Math.min(...ptsList),
+      maxPts: Math.max(...ptsList),
+      matches: matchList,
+    };
+  });
+  return result;
+}
+
 // ── INIT ────────────────────────────────────────────────────────
 function init() {
   if (typeof Chart === 'undefined') {
@@ -725,6 +871,16 @@ if (document.readyState === 'loading') {
   init();
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registered, scope:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
 </body>
 </html>
