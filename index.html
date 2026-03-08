@@ -64,6 +64,13 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 
 /* ── TEAM LIST ITEMS (shared by sidebar + drawer) ── */
 .team-list-item{padding:13px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.92rem;border-left:3px solid transparent;transition:background .12s;-webkit-tap-highlight-color:transparent;min-height:48px}
+.team-list-item .hide-btn{flex-shrink:0;background:none;border:none;color:rgba(244,244,238,0.25);font-size:.85rem;cursor:pointer;padding:4px 6px;border-radius:6px;-webkit-tap-highlight-color:transparent;transition:color .15s,background .15s;line-height:1}
+.team-list-item .hide-btn:active,.team-list-item:hover .hide-btn{color:rgba(244,244,238,0.6);background:rgba(255,255,255,0.08)}
+.team-list-item.hidden-team{opacity:0.38;border-left-color:rgba(255,255,255,0.1)}
+.team-list-item.hidden-team .t-name::after{content:' · hidden';font-size:.68rem;color:rgba(244,244,238,0.4);font-weight:400}
+.hidden-toggle{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:1px solid var(--border);flex-shrink:0}
+.hidden-toggle button{background:none;border:none;color:rgba(244,244,238,0.45);font-size:.75rem;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.hidden-toggle button:active{color:rgba(244,244,238,0.8)}
 .team-list-item:active{background:var(--surface2)}
 .team-list-item.selected{background:rgba(239,171,40,0.1);border-left-color:#EFAB28;color:#EFAB28}
 .team-list-item .t-name{font-weight:600}
@@ -180,6 +187,10 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
     <input type="text" id="drawerSearch" placeholder="Search team #..." oninput="filterTeams(this.value)"/>
   </div>
   <div class="drawer-list" id="drawerList"></div>
+  <div class="hidden-toggle" id="drawerHiddenToggle" style="display:none">
+    <span id="drawerHiddenCount" style="font-size:.72rem;color:rgba(244,244,238,0.4)"></span>
+    <button onclick="toggleShowHidden()"><span id="drawerHiddenToggleLabel">Show hidden</span></button>
+  </div>
 </div>
 
 <div class="tabs-header">
@@ -200,6 +211,10 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
         <input type="text" id="teamSearch" placeholder="Search team #..." oninput="filterTeams(this.value)"/>
       </div>
       <div class="team-list" id="teamList"></div>
+      <div class="hidden-toggle" id="hiddenToggle" style="display:none">
+        <span id="hiddenCount" style="font-size:.72rem;color:rgba(244,244,238,0.4)"></span>
+        <button onclick="toggleShowHidden()"><span id="hiddenToggleLabel">Show hidden</span></button>
+      </div>
     </div>
     <div id="teamDetail">
       <div class="empty-state">
@@ -266,21 +281,65 @@ function ratingDots(val, max=4){
 }
 
 // ── BUILD TEAM LIST ──────────────────────────────────────────────
+// ── HIDDEN TEAMS ────────────────────────────────────────────────
+let _hiddenTeams = new Set(JSON.parse(localStorage.getItem('hiddenTeams6328') || '[]'));
+let _showHidden = false;
+
+function toggleHideTeam(team){
+  if(_hiddenTeams.has(team)){
+    _hiddenTeams.delete(team);
+  } else {
+    _hiddenTeams.add(team);
+    // If we just hid the selected team, don't deselect — just mark it
+  }
+  localStorage.setItem('hiddenTeams6328', JSON.stringify([..._hiddenTeams]));
+  buildTeamList(document.getElementById('teamSearch')?.value||'','teamList');
+  buildTeamList(document.getElementById('drawerSearch')?.value||'','drawerList');
+}
+
+function toggleShowHidden(){
+  _showHidden = !_showHidden;
+  buildTeamList(document.getElementById('teamSearch')?.value||'','teamList');
+  buildTeamList(document.getElementById('drawerSearch')?.value||'','drawerList');
+}
+
 function buildTeamList(filter='',containerId='teamList'){
   const el = document.getElementById(containerId);
   if(!el) return;
   el.innerHTML='';
+  let hiddenCount=0;
   ALL_TEAMS.forEach(t=>{
     if(filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
+    const isHidden = _hiddenTeams.has(t);
+    if(isHidden) hiddenCount++;
+    if(isHidden && !_showHidden) return;
     const d=TEAM_DATA[t];
     const tier=getTier(d.avgTotal);
     const div=document.createElement('div');
-    div.className='team-list-item'+(window._selectedTeam===t?' selected':'');
+    let cls='team-list-item';
+    if(window._selectedTeam===t) cls+=' selected';
+    if(isHidden) cls+=' hidden-team';
+    div.className=cls;
     div.dataset.team=t;
     div.onclick=()=>{ selectTeam(t); closeDrawer(); };
-    div.innerHTML=`<span class="t-name">Team ${t}</span><span class="t-avg">${d.avgTotal} avg</span><span class="tier ${tier.cls}">${tier.label}</span>`;
+    const hideIcon = isHidden ? '👁' : '✕';
+    const hideTitle = isHidden ? 'Unhide team' : 'Hide team';
+    div.innerHTML=`<span class="t-name">Team ${t}</span><span class="t-avg">${d.avgTotal} avg</span><span class="tier ${tier.cls}">${tier.label}</span><button class="hide-btn" title="${hideTitle}" onclick="event.stopPropagation();toggleHideTeam('${t}')">${hideIcon}</button>`;
     el.appendChild(div);
   });
+  // Update toggle bars
+  const isDrawer = containerId==='drawerList';
+  const toggleId = isDrawer ? 'drawerHiddenToggle' : 'hiddenToggle';
+  const countId  = isDrawer ? 'drawerHiddenCount'  : 'hiddenCount';
+  const labelId  = isDrawer ? 'drawerHiddenToggleLabel' : 'hiddenToggleLabel';
+  const toggleEl = document.getElementById(toggleId);
+  const countEl  = document.getElementById(countId);
+  const labelEl  = document.getElementById(labelId);
+  if(toggleEl){
+    toggleEl.style.display = hiddenCount>0 ? 'flex' : 'none';
+    if(countEl) countEl.textContent = `${hiddenCount} hidden`;
+    if(labelEl) labelEl.textContent = _showHidden ? 'Hide hidden' : 'Show hidden';
+  }
 }
 
 function filterTeams(val){
