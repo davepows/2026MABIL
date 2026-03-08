@@ -1,5 +1,5 @@
 // Cache-once, serve-forever — no update checks needed
-const CACHE = 'advantagedata-v1';
+const CACHE = 'advantagedata-v3';
 
 const PRECACHE = [
   './index.html',
@@ -17,7 +17,11 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(self.clients.claim());
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
 // Always serve from cache; only hit network if not cached yet
