@@ -20,8 +20,8 @@
   --topbar-h:56px;--tabbar-h:52px;
   --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
 }
-html,body{height:100%;overflow:hidden}
-body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-text-size-adjust:100%}
+html{height:100%;overflow:hidden;max-width:100vw}
+body{height:100%;overflow:hidden;max-width:100vw;font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-text-size-adjust:100%}
 
 /* ── TOPBAR ── */
 .topbar{height:calc(var(--topbar-h) + var(--safe-top));min-height:calc(var(--topbar-h) + var(--safe-top));padding-top:var(--safe-top);display:flex;align-items:flex-end;justify-content:space-between;padding-left:16px;padding-right:16px;padding-bottom:0;background:#0d1629;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
@@ -60,7 +60,7 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
 .drawer-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
 /* ── DESKTOP SIDEBAR ── */
-.browser-layout{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start;flex:1}
+.browser-layout{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start;flex:1;min-width:0;width:100%}
 .team-list-panel{background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden;position:sticky;top:0;max-height:calc(100vh - var(--topbar-h) - var(--tabbar-h) - 32px);box-shadow:0 4px 20px rgba(0,0,0,0.35)}
 .team-list-search{padding:10px 12px;border-bottom:1px solid var(--border)}
 .team-list-search input{width:100%;background:rgba(0,0,0,0.3);border:1.5px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 12px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .15s;font-family:'Plus Jakarta Sans',sans-serif}
@@ -277,7 +277,7 @@ body{font-family:'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif;backgroun
       </div>
       <div class="team-list" id="teamList"></div>
     </div>
-    <div id="teamDetail">
+    <div id="teamDetail" style="min-width:0;overflow:hidden">
       <div class="empty-state">
         <div class="icon">🤖</div>
         <div>Select a team to view their data</div>
