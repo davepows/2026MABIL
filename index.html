@@ -947,20 +947,34 @@ async function loadMatchAnalysis(){
   if(_maLoading) return;
   _maLoading = true;
   showMALoading();
+
+  // Fetch independently so a missing match schedule doesn't break EPA
+  let matches = [], teamEvents = [];
+  let fetchErr = null;
   try {
     const [matchRes, teamRes] = await Promise.all([
       fetch(`https://api.statbotics.io/v3/matches?event=${MA_EVENT}&limit=500`),
       fetch(`https://api.statbotics.io/v3/team_events?event=${MA_EVENT}&limit=200`)
     ]);
-    if(!matchRes.ok || !teamRes.ok) throw new Error('API error');
-    const matches = await matchRes.json();
-    const teamEvents = await teamRes.json();
-    _maData = {matches, teamEvents};
-    _maLoaded = true;
-    renderMAContent();
+    if(matchRes.ok) { try { matches = await matchRes.json(); } catch(e){} }
+    if(teamRes.ok)  { try { teamEvents = await teamRes.json(); } catch(e){} }
+    if(!matchRes.ok && !teamRes.ok) throw new Error(`HTTP ${matchRes.status}`);
+    // Debug: log first objects so we can verify field names
+    if(matches[0])     console.log('[AdvData] sample match:', JSON.stringify(matches[0], null, 2));
+    if(teamEvents[0])  console.log('[AdvData] sample team_event:', JSON.stringify(teamEvents[0], null, 2));
   } catch(err){
-    showMAError(err);
+    fetchErr = err;
   }
+
+  if(fetchErr && !teamEvents.length && !matches.length){
+    showMAError(fetchErr);
+    _maLoading = false;
+    return;
+  }
+
+  _maData = {matches: matches||[], teamEvents: teamEvents||[]};
+  _maLoaded = true;
+  renderMAContent();
   _maLoading = false;
 }
 
@@ -974,9 +988,9 @@ function showMAError(err){
     `<div class="ma-error">
       <div style="font-size:1.5rem;margin-bottom:8px">⚠️</div>
       <div><strong>Could not load match data</strong></div>
-      <div class="ma-note">Make sure you have an internet connection and try switching tabs again.<br>
-      Statbotics API: api.statbotics.io/v3 (event: ${MA_EVENT})</div>
-      <button style="margin-top:14px;background:rgba(239,171,40,.15);border:1.5px solid rgba(239,171,40,.4);color:#EFAB28;border-radius:8px;padding:9px 20px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit" onclick="_maLoaded=false;_maLoading=false;loadMatchAnalysis()">Retry</button>
+      <div class="ma-note">Check your internet connection and try again.<br>
+      <span style="opacity:.6;font-size:.7rem">${err?.message||''}</span></div>
+      <button style="margin-top:14px;background:rgba(239,171,40,.15);border:1.5px solid rgba(239,171,40,.4);color:#EFAB28;border-radius:8px;padding:9px 20px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit" onclick="_maLoading=false;loadMatchAnalysis()">Retry</button>
     </div>`;
 }
 
@@ -988,7 +1002,17 @@ function renderMAContent(){
 function renderMAMatches(){
   const matches = _maData.matches;
   if(!matches||!matches.length){
-    document.getElementById('maContent').innerHTML='<div class="ma-loading">No match data available for this event yet.</div>';
+    document.getElementById('maContent').innerHTML=
+      `<div class="ma-error" style="border-color:rgba(239,171,40,.3);background:rgba(239,171,40,.06);color:#EFAB28">
+        <div style="font-size:1.5rem;margin-bottom:8px">📅</div>
+        <div><strong>Match schedule not posted yet</strong></div>
+        <div class="ma-note" style="color:rgba(244,244,238,0.5)">
+          Statbotics hasn't published the match schedule for <strong style="color:#EFAB28">${MA_EVENT}</strong> yet.<br>
+          Check back once the event schedule is released on The Blue Alliance.<br><br>
+          <a href="https://www.statbotics.io/event/${MA_EVENT}" target="_blank"
+             style="color:#EFAB28;text-decoration:underline">View on Statbotics →</a>
+        </div>
+      </div>`;
     return;
   }
   // Sort by comp_level priority then match number
@@ -1087,49 +1111,63 @@ function renderMAEPA(){
     document.getElementById('maContent').innerHTML='<div class="ma-loading">No EPA data available yet.</div>';
     return;
   }
-  // Sort by epa total descending
-  const getEPA = te => te.epa?.total_points?.mean ?? te.epa?.total ?? te.epa ?? 0;
+
+  // Flexible EPA field resolution
+  const getEPA    = te => te.epa?.total_points?.mean ?? te.epa?.total ?? (typeof te.epa==='number'?te.epa:0);
+  const getAuto   = te => te.epa?.auto_points?.mean  ?? te.epa?.auto   ?? null;
+  const getTele   = te => te.epa?.teleop_points?.mean ?? te.epa?.teleop ?? null;
+  const getEndg   = te => te.epa?.endgame_points?.mean ?? te.epa?.endgame ?? null;
+
   const sorted = [...teamEvents].sort((a,b)=>getEPA(b)-getEPA(a));
   const maxEPA = getEPA(sorted[0])||1;
 
-  let html=`<div class="card"><div class="table-scroll"><table class="epa-table">
-    <thead><tr>
-      <th style="width:36px;text-align:center">#</th>
-      <th>Team</th>
-      <th>EPA</th>
-      <th>Auto</th>
-      <th>Teleop</th>
-      <th>Endgame</th>
-      <th>W-L-T</th>
-    </tr></thead><tbody>`;
+  // Detect if any team has breakdown data (often absent pre-event)
+  const hasBreakdown = sorted.some(te=>getAuto(te)!=null);
+  // Detect if any team has a real W-L record
+  const hasRecord = sorted.some(te=>(te.record?.wins ?? te.record?.losses) != null);
+
+  const fmt = v => v!=null ? v.toFixed(1) : '—';
+
+  let html=`<div class="card"><div class="table-scroll"><table class="epa-table"><thead><tr>
+    <th style="width:36px;text-align:center">#</th>
+    <th>Team</th>
+    <th>EPA (pre-event estimate)</th>
+    ${hasBreakdown?'<th>Auto</th><th>Teleop</th><th>Endgame</th>':''}
+    ${hasRecord?'<th>W-L-T</th>':''}
+  </tr></thead><tbody>`;
 
   sorted.forEach((te,i)=>{
-    const team=(te.team||te.team_number||te.team_key||'').toString().replace('frc','');
-    const epaTotal=getEPA(te);
-    const epaAuto = te.epa?.auto_points?.mean ?? te.epa?.auto ?? null;
-    const epaTele = te.epa?.teleop_points?.mean ?? te.epa?.teleop ?? null;
-    const epaEnd = te.epa?.endgame_points?.mean ?? te.epa?.endgame ?? null;
-    const wins = te.record?.wins ?? te.wins ?? '—';
-    const losses = te.record?.losses ?? te.losses ?? '—';
-    const ties = te.record?.ties ?? te.ties ?? 0;
-    const barPct=Math.round((epaTotal/maxEPA)*100);
-    const rankCls=i<3?'top3':'';
-    const fmt=v=>v!=null?v.toFixed(1):'—';
+    const team = (te.team||te.team_number||te.team_key||'').toString().replace('frc','');
+    const epaTotal = getEPA(te);
+    const barPct = Math.round((epaTotal/maxEPA)*100);
+    const rankCls = i<3?'top3':'';
+
+    const wins   = te.record?.wins   ?? te.wins   ?? 0;
+    const losses = te.record?.losses ?? te.losses ?? 0;
+    const ties   = te.record?.ties   ?? te.ties   ?? 0;
+    const wlt    = hasRecord ? `<td style="color:var(--muted2);font-size:.8rem">${wins}-${losses}${ties>0?'-'+ties:''}</td>` : '';
+    const breakdown = hasBreakdown
+      ? `<td>${fmt(getAuto(te))}</td><td>${fmt(getTele(te))}</td><td>${fmt(getEndg(te))}</td>`
+      : '';
 
     html+=`<tr>
       <td class="epa-rank ${rankCls}">${i+1}</td>
       <td><span class="epa-team-num">${team}</span></td>
       <td><div class="epa-bar-wrap">
-        <div class="epa-bar" style="width:${barPct*0.6}px"></div>
+        <div class="epa-bar" style="width:${Math.min(barPct*0.7,100)}px"></div>
         <span class="epa-val">${fmt(epaTotal)}</span>
       </div></td>
-      <td>${fmt(epaAuto)}</td>
-      <td>${fmt(epaTele)}</td>
-      <td>${fmt(epaEnd)}</td>
-      <td style="color:var(--muted2);font-size:.8rem">${wins}-${losses}${ties>0?'-'+ties:''}</td>
+      ${breakdown}
+      ${wlt}
     </tr>`;
   });
-  html+='</tbody></table></div></div>';
+
+  const preEventNote = !hasBreakdown
+    ? `<div class="ma-note" style="margin-top:10px;text-align:center">
+        Pre-event EPA estimates only — auto/teleop/endgame breakdown and W-L-T will populate once matches are played.
+       </div>` : '';
+
+  html+='</tbody></table></div></div>'+preEventNote;
   document.getElementById('maContent').innerHTML=html;
 }
 
